@@ -190,7 +190,7 @@ if __name__ == "__main__":
     # df.to_csv('titles_vectors.csv', index=False)
 
     # Definir input do usuário
-    user_input = "how to predict user input"
+    user_input = "Techniques for learning and interpreting natural language and generating automatic responses in artificial intelligence systems"
 
     # Calcula similaridade
     analyzer.calculate_similarities(user_input)
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         lambda x: ' '.join(word for word in x.split() if len(word) > 3))
 
     corpus, dictionary = lda_preproc(top_docs['text_stopwords_removed'])
-    lda = lda_results(corpus, dictionary, num_topics=5)
+    lda = lda_results(corpus, dictionary, num_topics=3)
 
     topic_df = get_topic_keywords(lda, num_words=8)
 
@@ -227,15 +227,25 @@ if __name__ == "__main__":
         get_doc_topic(dictionary.doc2bow(text.split(',')), lda) for text in top_docs['text_stopwords_removed'].tolist()
     ]
 
-    for cluster_num in range(5):
+    with pd.ExcelWriter('google_lda_clusters.xlsx') as writer:
+        for cluster_num in range(3):
+            cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity_mean'], ascending=False)
+
+            cluster_df = cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5)
+
+            cluster_df.to_excel(writer, sheet_name=f'Cluster_{cluster_num + 1}', index=False)
+
+    for cluster_num in range(3):
         cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity_mean'], ascending=[False])
 
         print(f"\nPalavras chaves do Cluster {cluster_num + 1}: " + ", ".join(
             topic_df[f"Cluster-{cluster_num}"].tolist()))
 
         print(f"Documentos do Cluster {cluster_num + 1}:")
-        for doc in cluster_docs[['Title', 'Summary', 'Link']].head(5).values:
+        for doc in cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5).values:
             print(f" - Título: {doc[0]}")
             print(f" ---- Link: {doc[2]}")
-            print(f" ------  Resumo: {doc[1][:]}")
+            print(f" ------ Resumo: {doc[1][:]}")
+            print(f" --------- Categorias: {doc[3]} {doc[4]}")
+            print("\n")
 

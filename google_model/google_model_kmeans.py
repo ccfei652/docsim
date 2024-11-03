@@ -120,26 +120,36 @@ if __name__ == "__main__":
     # df.to_csv('titles_vectors.csv', index=False)
 
     # Definir input do usuário
-    user_input = "how to predict user input"
+    user_input = "Techniques for learning and interpreting natural language and generating automatic responses in artificial intelligence systems?"
 
     # Calcula similaridade
     analyzer.calculate_similarities(user_input)
 
     top_docs = analyzer.top_n_similar_documents('similarity_mean', 100)
 
-    kmeans = KMeans(n_clusters=5, random_state=42)
+    kmeans = KMeans(n_clusters=3, random_state=42)
     top_embeddings = top_docs['title_summary_vector'].apply(analyzer.string_to_vector).tolist()
     kmeans.fit(top_embeddings)
 
     top_docs['Cluster'] = kmeans.labels_
 
-    for cluster_num in range(5):
+    with pd.ExcelWriter('google_kmeans_clusters.xlsx') as writer:
+        for cluster_num in range(3):
+            cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity_mean'], ascending=False)
+
+            cluster_df = cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5)
+
+            cluster_df.to_excel(writer, sheet_name=f'Cluster_{cluster_num + 1}', index=False)
+
+    for cluster_num in range(3):
         cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity_mean'], ascending=[False])
         print(f"\nCluster {cluster_num}:")
 
         # Mostrar os 3 primeiros documentos do cluster
         print(f"Documentos do Cluster {cluster_num}:")
-        for doc in cluster_docs[['Title', 'Summary', 'Link']].head(5).values:
+        for doc in cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5).values:
             print(f" - Título: {doc[0]}")
             print(f" --- Link: {doc[2]}")
             print(f" -----  Resumo: {doc[1][:]}")
+            print(f" --------- Categorias: {doc[3]} {doc[4]}")
+            print("")

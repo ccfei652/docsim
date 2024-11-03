@@ -11,7 +11,7 @@ import gensim
 from gensim import corpora
 from gensim.models import LdaModel
 
-from preprocess import  stopwords_treatment, preprocess_text
+from preprocess import stopwords_treatment, preprocess_text
 
 from tqdm.auto import tqdm
 
@@ -76,7 +76,7 @@ def get_doc_topic(text, lda, dictionary):
     return sorted_topics[0][0]
 
 
-def search_and_cluster(user_input, df, model, num_clusters=5, stopwords=stopwords):
+def search_and_cluster(user_input, df, model, num_clusters=3, stopwords=stopwords):
     # df['text'] = df['Title'] + ". " + df['Summary']
     #
     # document_embeddings = model.encode(df['text'].tolist(), show_progress_bar=True)
@@ -115,16 +115,25 @@ def search_and_cluster(user_input, df, model, num_clusters=5, stopwords=stopword
         for text in top_docs['text_stopwords_removed'].tolist()
     ]
 
+    with pd.ExcelWriter('sbert_lda_clusters.xlsx') as writer:
+        for cluster_num in range(num_clusters):
+            cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity'], ascending=False)
+
+            cluster_df = cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5)
+
+            cluster_df.to_excel(writer, sheet_name=f'Cluster_{cluster_num + 1}', index=False)
+
     for cluster_num in range(num_clusters):
         cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity'], ascending=[False])
 
         print(f"\nPalavras chaves do Cluster {cluster_num + 1}: " + ", ".join(topic_df[f"Cluster-{cluster_num}"].tolist()))
 
         print(f"Documentos do Cluster {cluster_num + 1}:")
-        for doc in cluster_docs[['Title', 'Summary', 'Link']].head(5).values:
+        for doc in cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5).values:
             print(f" - Título: {doc[0]}")
             print(f" ---- Link: {doc[2]}")
-            print(f" ------  Resumo: {doc[1][:]}")
+            print(f" ------ Resumo: {doc[1][:]}")
+            print(f" --------- Categorias: {doc[3]} {doc[4]}\n")
 
 
 # Exemplo de execução
@@ -134,6 +143,6 @@ if __name__ == "__main__":
 
     model = SentenceTransformer('all-mpnet-base-v2', )
 
-    user_input = "nlp and word embedding techniques to search documents"
+    user_input = "Techniques for learning and interpreting natural language and generating automatic responses in artificial intelligence systems"
 
     search_and_cluster(user_input, df, model)
