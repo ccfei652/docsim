@@ -39,7 +39,7 @@ def search_and_cluster(user_input, df, model, num_clusters=3):
         for cluster_num in range(num_clusters):
             cluster_docs = top_docs[top_docs['Cluster'] == cluster_num].sort_values(by=['similarity'], ascending=False)
 
-            cluster_df = cluster_docs[['Title', 'Summary', 'Link', 'Primary Category', 'Category']].head(5)
+            cluster_df = cluster_docs[['Title', 'Link', 'Category']].head(5)
 
             cluster_df.to_excel(writer, sheet_name=f'Cluster_{cluster_num + 1}', index=False)
 
@@ -62,6 +62,6 @@ if __name__ == "__main__":
 
     model = SentenceTransformer('all-mpnet-base-v2')
 
-    user_input = "Techniques for learning and interpreting natural language and generating automatic responses in artificial intelligence systems"
+    user_input = "How can the security of web applications be improved against cyber attacks?"
 
     search_and_cluster(user_input, df, model)
